@@ -11,8 +11,8 @@ Uses Pandera for declarative schema/value validation. Exits non-zero
 
 import sys
 import pandas as pd
-import pandera as pa
-from pandera import Column, Check, DataFrameSchema
+import pandera.pandas as pa
+from pandera.pandas import Column, Check, DataFrameSchema
 
 DATA_PATH = "data/transactions.csv"  # TODO: point at your real data source
 
