@@ -27,20 +27,23 @@ jobs:
       - name: Create artifacts directory
         run: mkdir -p artifacts
 
+      - name: Generate synthetic data
+        run: python src/generate_synthetic_data.py
+
       - name: Validate data
-        run: python validate_data.py
+        run: python src/validate_data.py
 
       - name: Train model
-        run: python train.py
+        run: python src/train.py
 
       - name: Evaluate against production baseline
-        run: python evaluate.py
+        run: python src/evaluate.py
 
       - name: Register model in MLflow
         if: success()
-        run: python log_to_registry.py
+        run: python src/log_to_registry.py
         env:
-          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI || '' }}
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
 
       - name: Upload model artifact
         if: success()
@@ -55,3 +58,4 @@ jobs:
           echo "One or more pipeline stages failed."
           echo "Production model has NOT been replaced."
           exit 1
+
