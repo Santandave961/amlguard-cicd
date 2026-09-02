@@ -41,7 +41,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Drift detected — triggering ml-pipeline.yml"
-          gh workflow run ml-pipeline.yml --repo ${{ github.repository }}
+          gh workflow run ml_pipeline.yml --repo ${{ github.repository }}
 
       - name: No drift detected
         if: steps.drift_check.outcome == 'success'
