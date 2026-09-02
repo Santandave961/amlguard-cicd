@@ -11,6 +11,9 @@ on:
 jobs:
   validate-train-evaluate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write  # needed to clear the old cache entry before saving a fresh one
 
     steps:
       - name: Checkout repository
@@ -36,6 +39,20 @@ jobs:
       - name: Train model
         run: python src/train.py
 
+      - name: Clear previous baseline cache
+        if: success()
+        continue-on-error: true  # fine if there's nothing to delete yet (first run)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh cache delete amlguard-baseline-sample --repo ${{ github.repository }}
+
+      - name: Cache baseline distribution sample for drift checks
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: artifacts/baseline_sample.csv
+          key: amlguard-baseline-sample
+
       - name: Evaluate against production baseline
         run: python src/evaluate.py
 
@@ -58,4 +75,3 @@ jobs:
           echo "One or more pipeline stages failed."
           echo "Production model has NOT been replaced."
           exit 1
-

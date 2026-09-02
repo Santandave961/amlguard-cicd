@@ -1,0 +1,55 @@
+name: AMLGuard Drift Check
+
+on:
+  schedule:
+    # Daily at 6am UTC — check for drift more often than the weekly retrain
+    - cron: '0 6 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write  # needed to trigger the ml-pipeline workflow below
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore baseline sample from last training run
+        uses: actions/cache/restore@v4
+        with:
+          path: artifacts/baseline_sample.csv
+          key: amlguard-baseline-sample
+
+      - name: Check for drift
+        id: drift_check
+        run: python src/check_drift.py
+        continue-on-error: true  # non-zero exit means drift detected — handle explicitly below, not as a workflow failure
+
+      - name: Trigger retraining pipeline (drift detected)
+        if: steps.drift_check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Drift detected — triggering ml-pipeline.yml"
+          gh workflow run ml-pipeline.yml --repo ${{ github.repository }}
+
+      - name: No drift detected
+        if: steps.drift_check.outcome == 'success'
+        run: echo "No significant drift — no retraining needed."
+
+      - name: Upload drift report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report
+          path: artifacts/drift_report.json

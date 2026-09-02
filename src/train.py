@@ -95,6 +95,14 @@ def main():
     with open(METRICS_OUTPUT_PATH, "w") as f:
         json.dump(metrics, f, indent=2)
 
+# Save a reference sample of the training data's feature distribution.
+# check_drift.py compares new/incoming data against this to detect
+# when live data has shifted enough to warrant retraining.
+    BASELINE_SAMPLE_PATH = "artifacts/baseline_sample.csv"
+    sample_size = min(500, len(X_train))
+    X_train.sample(n=sample_size, random_state=42).to_csv(BASELINE_SAMPLE_PATH, index=False)
+    print(f"Saved baseline distribution sample ({sample_size} rows) to {BASELINE_SAMPLE_PATH} for future drift detection.")
+
     print("Training complete.")
 
 
